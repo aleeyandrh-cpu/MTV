@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MTV - Your Cart</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header>
+        <div class="nav-left">
+            <a href="index.html" class="logo-link">
+                <img class="logo" src="img/logo.png" alt="MTV Logo">
+            </a>
+            <nav class="nav-links">
+                <a href="event.html">event</a>
+                <a href="shop.html">shop</a>
+            </nav>
+        </div>
+        <div class="nav-right">
+            <a href="cart.html" class="active-cart">
+                <svg class="bag-icon" viewBox="0 0 24 24">
+                    <path d="M18 6h-2c0-2.21-1.79-4-4-4S8 3.79 8 6H6c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-6-2c1.1 0 2 .9 2 2H10c0-1.1-.9-2 2-2zm6 16H6V8h2v2c0 .55.45 1 1 1s1-.45 1-1V8h4v2c0 .55.45 1 1 1s1-.45 1-1V8h2v12z"/>
+                </svg>
+            </a>
+        </div>
+    </header>
+
+    <main class="cart-page-container">
+        
+        <div class="cart-header-row">
+            <h1 class="cart-page-title">Your Cart</h1>
+            <a href="shop.html" class="continue-shopping-btn">Continue Shopping</a>
+        </div>
+
+        <div class="cart-table">
+            <div class="cart-table-header">
+                <div class="header-prod">Product</div>
+                <div class="header-qty">Quantity</div>
+                <div class="header-tot">Total</div>
+            </div>
+
+            <div id="cart-items-container"></div>
+        </div>
+
+        <div class="cart-summary-footer">
+            <button class="checkout-btn" onclick="proceedToCheckout()">Check Out</button>
+            <div class="total-price-box">
+                <div class="est-row">
+                    <span class="est-label">Estimated total</span>
+                    <span class="est-value">RM <span id="cart-estimated-total">0.00</span></span>
+                </div>
+                <p class="tax-note">Taxes, discounts and shipping calculated at checkout.</p>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        function renderCart() {
+            const container = document.getElementById('cart-items-container');
+            if (!container) return; // Mencegah ralat jika tersalah id kontainer
+            
+            container.innerHTML = ''; 
+
+            // Ambil data terus dari localStorage (sama macam checkout.html)
+            let cart = JSON.parse(localStorage.getItem('shoppingCart')) || [];
+
+            if (cart.length === 0) {
+                container.innerHTML = '<p style="color:#aaa; padding: 40px 0; text-align:left; font-size:14px;">Troli anda kosong.</p>';
+                document.getElementById('cart-estimated-total').innerText = '0.00';
+                return;
+            }
+
+            let grandTotal = 0;
+
+            cart.forEach((item) => {
+                const itemTotal = item.price * item.qty;
+                grandTotal += itemTotal;
+
+                const sizeHTML = item.size ? `<span class="cart-item-size">Size : ${item.size}</span>` : '';
+                const subtitleHTML = item.subtitle ? `<p class="cart-item-subtitle">${item.subtitle}</p>` : '';
+
+                // Memastikan susun atur class HTML adalah tepat dengan style.css anda
+                const itemRow = `
+                    <div class="cart-item">
+                        <div class="cart-prod-col">
+                            <div class="cart-img-box">
+                                <img src="${item.image}" alt="${item.title}">
+                            </div>
+                            <div class="cart-prod-details">
+                                <h2 class="cart-item-title">${item.title}</h2>
+                                ${subtitleHTML}
+                                <span class="cart-item-price">RM ${item.price.toFixed(2)}</span>
+                                ${sizeHTML}
+                            </div>
+                        </div>
+                        <div class="cart-qty-col">
+                            <div class="cart-qty-selector">
+                                <button class="cart-qty-btn" onclick="changeQuantity('${item.id}', -1)">-</button>
+                                <span class="item-qty-value">${item.qty}</span>
+                                <button class="cart-qty-btn" onclick="changeQuantity('${item.id}', 1)">+</button>
+                            </div>
+                            <svg class="delete-icon" onclick="deleteItem('${item.id}')" viewBox="0 0 24 24" style="width:24px; height:24px; cursor:pointer; margin-left:15px; fill:#fff;">
+                                <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                            </svg>
+                        </div>
+                        <div class="cart-total-col">
+                            RM <span class="item-total-value">${itemTotal.toFixed(2)}</span>
+                        </div>
+                    </div>
+                `;
+                container.innerHTML += itemRow;
+            });
+
+            document.getElementById('cart-estimated-total').innerText = grandTotal.toFixed(2);
+        }
+
+        function changeQuantity(id, change) {
+            let cart = JSON.parse(localStorage.getItem('shoppingCart')) || [];
+            const itemIndex = cart.findIndex(item => item.id === id);
+
+            if (itemIndex > -1) {
+                cart[itemIndex].qty += change;
+                if (cart[itemIndex].qty < 1) return; // Kuantiti minimum 1
+                
+                localStorage.setItem('shoppingCart', JSON.stringify(cart));
+                renderCart(); // Segarkan halaman cart secara langsung
+            }
+        }
+
+        function deleteItem(id) {
+            if (confirm("Adakah anda ingin membuang item ini dari troli?")) {
+                let cart = JSON.parse(localStorage.getItem('shoppingCart')) || [];
+                cart = cart.filter(item => item.id !== id);
+                localStorage.setItem('shoppingCart', JSON.stringify(cart));
+                renderCart();
+            }
+        }
+
+        function proceedToCheckout() {
+            let cart = JSON.parse(localStorage.getItem('shoppingCart')) || [];
+            if (cart.length === 0) {
+                alert("Troli anda kosong!");
+                return;
+            }
+            window.location.href = "checkout.html";
+        }
+
+        window.onload = renderCart;
+
+        // Fungsi mengesan jika user tekan butang Enter pada keyboard
+function checkSearchEnter(event) {
+    if (event.key === "Enter") {
+        triggerSearch();
+    }
+}
+
+// Fungsi menghantar kata kunci carian ke halaman shop/event
+function triggerSearch() {
+    const query = document.getElementById('search-input').value.trim().toLowerCase();
+    if (query !== "") {
+        // Bawa user ke page shop bersama parameter carian (contoh: shop.html?search=nirvana)
+        window.location.href = `shop.html?search=${encodeURIComponent(query)}`;
+    }
+}
+    </script>
+    <footer class="main-footer">
+    <div class="footer-social-icons">
+        <a href="https://www.facebook.com" target="_blank" class="social-link">
+            <svg viewBox="0 0 24 24" class="footer-icon">
+                <path d="M9 8H7v3h2v9h3v-9h3l.5-3H12V6c0-.88.39-1 1-1h2V2h-3c-2.42 0-4 1.35-4 4v2z"/>
+            </svg>
+        </a>
+        <a href="https://www.instagram.com" target="_blank" class="social-link">
+            <svg viewBox="0 0 24 24" class="footer-icon">
+                <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.051.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/>
+            </svg>
+        </a>
+        <a href="https://www.twitter.com" target="_blank" class="social-link">
+            <svg viewBox="0 0 24 24" class="footer-icon">
+                <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+        </a>
+        <a href="https://www.tiktok.com" target="_blank" class="social-link">
+            <svg viewBox="0 0 24 24" class="footer-icon">
+                <path d="M12.53.02C13.84 0 15.14.01 16.44 0c.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.52-4.06-1.37-.28-.2-.53-.43-.77-.68v6.47c.07 4.99-4.2 9.46-9.43 9.5-5.6-.08-10.03-5.07-9.56-10.74.37-4.43 4.01-8.08 8.47-8.38v4.03c-2.4.19-4.33 2.18-4.32 4.61.04 2.7 2.45 4.79 5.12 4.49 2.05-.22 3.61-2.02 3.52-4.09l-.04-14.78z"/>
+            </svg>
+        </a>
+    </div>
+    <div class="footer-copyright">
+        &copy; 2026 MTV
+    </div>
+</footer>
+</body>
+</html>
